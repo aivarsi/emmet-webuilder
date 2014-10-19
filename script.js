@@ -8,14 +8,12 @@ var SendParam = "";
 
 
 function OnWebkitCreated(Sender, Browser) {
-  web.Webkit.Top = 0;
-  web.Webkit.Left = 0;
-  web.Webkit.Width = win.ClientWidth;
-  web.Webkit.Height = win.ClientHeight;
-  web.Webkit.Anchors = akLeft || akRight || akTop || akBottom;
-  web.Webkit.Load(Script.GetPath + "index.html");
+  Script.TimeOut(1, &HideWindow);
+}
+
+function HideWindow(Sender) {
   win.Caption = "";
-  win.Hide;
+  win.Hide();
 }
 
 function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
@@ -23,24 +21,29 @@ function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
 }
 
 function CreateEmmet(Callback) {
-   var Created = false;
+  var Created = false;
 
-   if (win == null) {
+  if (win == null) {
      win = new TForm(WeBuilder);
      win.width = 60;
      win.Height = 60;
      win.Caption = "Loading...";
-     web = Script.CreateScriptableWebKit(win, "", &OnWebkitCreated);
+     web = Script.CreateScriptableWebKit(win, Script.GetPath + "index.html", &OnWebkitCreated);
      web.Subscribe("Emmet Text", &OnWebkitData);
      web.Subscribe("Emmet SelStart", &OnWebkitData);
      web.Subscribe("Emmet SelEnd", &OnWebkitData);
      Web.OnLoadEnd = &OnWebkitLoadEnd;
      web.OnConsoleMessage = &OnWebkitConsoleMessage;
+     web.Webkit.Top = 0;
+     web.Webkit.Left = 0;
+     web.Webkit.Width = win.ClientWidth;
+     web.Webkit.Height = win.ClientHeight;
+     web.Webkit.Anchors = akLeft || akRight || akTop || akBottom;
      Created = true;
      CallbackAfterCreate = Callback;
      win.Show;
-   }
-   return Created;
+  }
+  return Created;
 }
 
 
@@ -371,6 +374,21 @@ function ReflectValue(Sender) {
     }
 }
 
+function OnInstalled() {
+  if (WeBuilder.BuildNumber < 153) {
+    return "A newer editor version is required for this plugin to work.";
+  }
+}
+
+function OnExit() {
+  if (web != null) {
+    delete web;
+  }
+  if (win != null) {
+    delete win;
+  }
+}
+
 Script.RegisterAction("Emmet", "Expand Abbreviation", "Shift+Ctrl+E", &ExpandAbbreviation);
 Script.RegisterAction("Emmet", "Match Tag Pair (Outward)", "Ctrl+Alt+D", &MatchTagPairOutward);
 Script.RegisterAction("Emmet", "Match Tag Pair (Inward)", "Shift+Ctrl+D", &MatchTagPairInward);
@@ -392,3 +410,6 @@ Script.RegisterAction("Emmet", "Decrement Number by 10", "Ctrl+Alt+Down", &Decre
 Script.RegisterAction("Emmet", "Select Next Item", "Ctrl+.", &SelectNextItem);
 Script.RegisterAction("Emmet", "Select Previous Item", "Ctrl+,", &SelectPrevItem);
 Script.RegisterAction("Emmet", "Reflect CSS Value", "Shift+Ctrl+B", &ReflectValue);
+
+Script.ConnectSignal("exit", &OnExit);
+Script.ConnectSignal("installed", &OnInstalled);
