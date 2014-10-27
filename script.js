@@ -42,6 +42,7 @@ function CreateEmmet(Callback) {
      Created = true;
      CallbackAfterCreate = Callback;
      win.Show;
+     Document.Activate;
   }
   return Created;
 }
@@ -121,29 +122,9 @@ function OnWebkitData(channel, data) {
 }
 
 function PrepareEmmetData() {
-  var Sel = Editor.Selection
-  var StartText = copy(Editor.Text, 1, Sel.SelStart + Sel.SelLength);
-  var matches;
-  var poses;
-  var m = RegexMatchAll(StartText, "\r\n", false, matches, poses);
-  var SelStart = Sel.SelStart;
-  var SelLen = Sel.SelLength;
-  var i;
-  var p;
-  var n1 = 0;
-  var n2 = 0;
-  if (m) {
-    for (i = 0; i < Length(poses); i++) {
-      p = _v(poses, [i, 0]);
-      if (p < Sel.SelStart) {
-        SelStart = SelStart - 1;
-        n1 = n1 + 1;
-      } else if (p <= Sel.SelStart + Sel.SelLength) {
-        SelLen = SelLen - 1;
-        n2 = n2 + 1;
-      }
-    }
-  }
+  var SelStart;
+  var SelLen;
+  Editor.GetSelectionForUnixNewlines(SelStart, SelLen);
   var dt;
   if (Document.DocType == dtCSS) {
     dt = "css";
@@ -155,7 +136,7 @@ function PrepareEmmetData() {
 
 function DoExpandAbbreviation() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "expand_abbreviation" + data);
+  web.Send("TEXT", "expand_abbreviation" + data);
 }
 
 function ExpandAbbreviation(Sender) {
@@ -166,7 +147,7 @@ function ExpandAbbreviation(Sender) {
 
 function DoMatchTagPairOutward() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "match_pair_outward" + data);
+  web.Send("TEXT", "match_pair_outward" + data);
 }
 
 function MatchTagPairOutward(Sender) {
@@ -177,7 +158,7 @@ function MatchTagPairOutward(Sender) {
 
 function DoMatchTagPairInward() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "match_pair_inward" + data);
+  web.Send("TEXT", "match_pair_inward" + data);
 }
 
 function MatchTagPairInward(Sender) {
@@ -188,11 +169,11 @@ function MatchTagPairInward(Sender) {
 
 function DoWrapWithAbbrevationDelayed() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "wrap_with_abbreviation" + data);
+  web.Send("TEXT", "wrap_with_abbreviation" + data);
 }
 
 function DoWrapWithAbbrevation() {
-  web.SendNoWait("PARAM", SendParam);
+  web.Send("PARAM", SendParam);
   Script.TimeOut(1, &DoWrapWithAbbrevationDelayed);
 }
 
@@ -208,7 +189,7 @@ function WrapWithAbbrevation(Sender) {
 
 function DoNextEditPoint() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "next_edit_point" + data);
+  web.Send("TEXT", "next_edit_point" + data);
 }
 
 function NextEditPoint(Sender) {
@@ -219,7 +200,7 @@ function NextEditPoint(Sender) {
 
 function DoPrevEditPoint() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "prev_edit_point" + data);
+  web.Send("TEXT", "prev_edit_point" + data);
 }
 
 function PrevEditPoint(Sender) {
@@ -230,7 +211,7 @@ function PrevEditPoint(Sender) {
 
 function DoSelectLine() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "select_line" + data);
+  web.Send("TEXT", "select_line" + data);
 }
 
 function SelectLine(Sender) {
@@ -241,7 +222,7 @@ function SelectLine(Sender) {
 
 function DoMergeLines() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "merge_lines" + data);
+  web.Send("TEXT", "merge_lines" + data);
 }
 
 function MergeLines(Sender) {
@@ -252,7 +233,7 @@ function MergeLines(Sender) {
 
 function DoToggleComment() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "toggle_comment" + data);
+  web.Send("TEXT", "toggle_comment" + data);
 }
 
 function ToggleComment(Sender) {
@@ -263,7 +244,7 @@ function ToggleComment(Sender) {
 
 function DoSplitJoinTag() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "split_join_tag" + data);
+  web.Send("TEXT", "split_join_tag" + data);
 }
 
 function SplitJoinTag(Sender) {
@@ -274,7 +255,7 @@ function SplitJoinTag(Sender) {
 
 function DoRemoveTag() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "remove_tag" + data);
+  web.Send("TEXT", "remove_tag" + data);
 }
 
 function RemoveTag(Sender) {
@@ -285,7 +266,7 @@ function RemoveTag(Sender) {
 
 function DoEvalMath() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "evaluate_math_expression" + data);
+  web.Send("TEXT", "evaluate_math_expression" + data);
 }
 
 function EvalMath(Sender) {
@@ -296,7 +277,7 @@ function EvalMath(Sender) {
 
 function DoIncrement() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", IncCmd + data);
+  web.Send("TEXT", IncCmd + data);
 }
 
 function IncrementBy1(Sender) {
@@ -343,7 +324,7 @@ function DecrementBy01(Sender) {
 
 function DoSelectNextItem() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "select_next_item" + data);
+  web.Send("TEXT", "select_next_item" + data);
 }
 
 function SelectNextItem(Sender) {
@@ -354,7 +335,7 @@ function SelectNextItem(Sender) {
 
 function DoSelectPrevItem() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "select_previous_item" + data);
+  web.Send("TEXT", "select_previous_item" + data);
 }
 
 function SelectPrevItem(Sender) {
@@ -365,7 +346,7 @@ function SelectPrevItem(Sender) {
 
 function DoReflectValue() {
   var data = PrepareEmmetData();
-  web.SendNoWait("TEXT", "reflect_css_value" + data);
+  web.Send("TEXT", "reflect_css_value" + data);
 }
 
 function ReflectValue(Sender) {
