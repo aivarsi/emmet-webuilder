@@ -1,5 +1,6 @@
 var win = null;
 var web = null;
+var browser_ready = false;
 var CallbackAfterCreate;
 var LastReceivedText;
 var LastReceivedSelStart;
@@ -17,6 +18,7 @@ function HideWindow(Sender) {
 }
 
 function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
+  browser_ready = true;
   Script.TimeOut(1, CallbackAfterCreate);
 }
 
@@ -140,7 +142,7 @@ function DoExpandAbbreviation() {
 }
 
 function ExpandAbbreviation(Sender) {
-    if (!CreateEmmet(&DoExpandAbbreviation)) {
+    if (!CreateEmmet(&DoExpandAbbreviation) && browser_ready) {
       DoExpandAbbreviation();
     }
 }
@@ -151,7 +153,7 @@ function DoMatchTagPairOutward() {
 }
 
 function MatchTagPairOutward(Sender) {
-    if (!CreateEmmet(&DoMatchTagPairOutward)) {
+    if (!CreateEmmet(&DoMatchTagPairOutward) && browser_ready) {
       DoMatchTagPairOutward();
     }
 }
@@ -162,7 +164,7 @@ function DoMatchTagPairInward() {
 }
 
 function MatchTagPairInward(Sender) {
-    if (!CreateEmmet(&DoMatchTagPairInward)) {
+    if (!CreateEmmet(&DoMatchTagPairInward) && browser_ready) {
       DoMatchTagPairInward();
     }
 }
@@ -181,7 +183,7 @@ function WrapWithAbbrevation(Sender) {
   var param = Prompt("Enter abbrevation:", "");
   if (param != "") {
     SendParam = param;
-    if (!CreateEmmet(&DoWrapWithAbbrevation)) {
+    if (!CreateEmmet(&DoWrapWithAbbrevation) && browser_ready) {
       DoWrapWithAbbrevation();
     }
   }
@@ -193,7 +195,7 @@ function DoNextEditPoint() {
 }
 
 function NextEditPoint(Sender) {
-    if (!CreateEmmet(&DoNextEditPoint)) {
+    if (!CreateEmmet(&DoNextEditPoint) && browser_ready) {
       DoNextEditPoint();
     }
 }
@@ -204,7 +206,7 @@ function DoPrevEditPoint() {
 }
 
 function PrevEditPoint(Sender) {
-    if (!CreateEmmet(&DoPrevEditPoint)) {
+    if (!CreateEmmet(&DoPrevEditPoint) && browser_ready) {
       DoPrevEditPoint();
     }
 }
@@ -215,7 +217,7 @@ function DoSelectLine() {
 }
 
 function SelectLine(Sender) {
-    if (!CreateEmmet(&DoSelectLine)) {
+    if (!CreateEmmet(&DoSelectLine) && browser_ready) {
       DoSelectLine();
     }
 }
@@ -226,7 +228,7 @@ function DoMergeLines() {
 }
 
 function MergeLines(Sender) {
-    if (!CreateEmmet(&DoMergeLines)) {
+    if (!CreateEmmet(&DoMergeLines) && browser_ready) {
       DoMergeLines();
     }
 }
@@ -237,7 +239,7 @@ function DoToggleComment() {
 }
 
 function ToggleComment(Sender) {
-    if (!CreateEmmet(&DoToggleComment)) {
+    if (!CreateEmmet(&DoToggleComment) && browser_ready) {
       DoToggleComment();
     }
 }
@@ -248,7 +250,7 @@ function DoSplitJoinTag() {
 }
 
 function SplitJoinTag(Sender) {
-    if (!CreateEmmet(&DoSplitJoinTag)) {
+    if (!CreateEmmet(&DoSplitJoinTag) && browser_ready) {
       DoSplitJoinTag();
     }
 }
@@ -259,7 +261,7 @@ function DoRemoveTag() {
 }
 
 function RemoveTag(Sender) {
-    if (!CreateEmmet(&DoRemoveTag)) {
+    if (!CreateEmmet(&DoRemoveTag) && browser_ready) {
       DoRemoveTag();
     }
 }
@@ -270,7 +272,7 @@ function DoEvalMath() {
 }
 
 function EvalMath(Sender) {
-    if (!CreateEmmet(&DoEvalMath)) {
+    if (!CreateEmmet(&DoEvalMath) && browser_ready) {
       DoEvalMath();
     }
 }
@@ -282,42 +284,42 @@ function DoIncrement() {
 
 function IncrementBy1(Sender) {
     IncCmd = "increment_number_by_1";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
 
 function DecrementBy1(Sender) {
     IncCmd = "decrement_number_by_1";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
 
 function IncrementBy10(Sender) {
     IncCmd = "increment_number_by_10";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
 
 function DecrementBy10(Sender) {
     IncCmd = "decrement_number_by_10";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
 
 function IncrementBy01(Sender) {
     IncCmd = "increment_number_by_01";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
 
 function DecrementBy01(Sender) {
     IncCmd = "decrement_number_by_01";
-    if (!CreateEmmet(&DoIncrement)) {
+    if (!CreateEmmet(&DoIncrement) && browser_ready) {
       DoIncrement();
     }
 }
@@ -328,7 +330,7 @@ function DoSelectNextItem() {
 }
 
 function SelectNextItem(Sender) {
-    if (!CreateEmmet(&DoSelectNextItem)) {
+    if (!CreateEmmet(&DoSelectNextItem) && browser_ready) {
       DoSelectNextItem();
     }
 }
@@ -339,7 +341,7 @@ function DoSelectPrevItem() {
 }
 
 function SelectPrevItem(Sender) {
-    if (!CreateEmmet(&DoSelectPrevItem)) {
+    if (!CreateEmmet(&DoSelectPrevItem) && browser_ready) {
       DoSelectPrevItem();
     }
 }
@@ -350,7 +352,7 @@ function DoReflectValue() {
 }
 
 function ReflectValue(Sender) {
-    if (!CreateEmmet(&DoReflectValue)) {
+    if (!CreateEmmet(&DoReflectValue) && browser_ready) {
       DoReflectValue();
     }
 }
