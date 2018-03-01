@@ -1,5 +1,4 @@
-var win = null;
-var web = null;
+var scriptexec = null;
 var browser_ready = false;
 var CallbackAfterCreate;
 var LastReceivedText;
@@ -7,15 +6,6 @@ var LastReceivedSelStart;
 var IncCmd = "";
 var SendParam = "";
 
-
-function OnWebkitCreated(Sender, Browser) {
-  Script.TimeOut(1, &HideWindow);
-}
-
-function HideWindow(Sender) {
-  win.Caption = "";
-  win.Hide();
-}
 
 function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
   browser_ready = true;
@@ -25,25 +15,12 @@ function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
 function CreateEmmet(Callback) {
   var Created = false;
 
-  if (win == null) {
-     win = new TForm(WeBuilder);
-     win.width = 60;
-     win.Height = 60;
-     win.Caption = "Loading...";
-     web = Script.CreateScriptableWebKit(win, Script.GetPath + "index.html", &OnWebkitCreated);
-     web.Subscribe("Emmet Text", &OnWebkitData);
-     web.Subscribe("Emmet SelStart", &OnWebkitData);
-     web.Subscribe("Emmet SelEnd", &OnWebkitData);
-     Web.OnLoadEnd = &OnWebkitLoadEnd;
-     web.OnConsoleMessage = &OnWebkitConsoleMessage;
-     web.Webkit.Top = 0;
-     web.Webkit.Left = 0;
-     web.Webkit.Width = win.ClientWidth;
-     web.Webkit.Height = win.ClientHeight;
-     web.Webkit.Anchors = akLeft || akRight || akTop || akBottom;
+  if (scriptexec == null) {
+     scriptexec = Script.CreateScriptableJsExecuter(Script.GetPath + "index.html");
+     scriptexec.OnLoadEnd = &OnWebkitLoadEnd;
+     scriptexec.OnConsoleMessage = &OnWebkitConsoleMessage;
      Created = true;
      CallbackAfterCreate = Callback;
-     win.Show;
      Document.Activate;
   }
   return Created;
@@ -67,63 +44,64 @@ function GetWebuilderTab() {
 }
 
 
-function OnWebkitData(channel, data) {
+function OnWebkitData(res, err) {
   var Sel;
   var tab;
   
+  var json = new TScriptableJSON();
+  json.Parse(res);
+  var received_text = json.GetValue("text");
+  var received_selstart = json.GetValue("selstart");
+  var received_end = json.GetValue("selend");
   
-  if (channel == "Emmet Text") {
-    var text = data;
-    LastReceivedText = data;
-    if (Script.Settings.TabsToSpaces) {
-      tab = GetWebuilderTab();
-      text = Replace(text, chr(9), tab);
-    }
-    var fixedtext = Replace(text, "\n", chr(13) + chr(10));
-    if (Editor.text != fixedtext) {
-      Editor.BeginEditing;
-      Editor.Text = text;    
-    }
+  var text = received_text;
+  LastReceivedText = received_text;
+  if (Script.Settings.TabsToSpaces) {
+    tab = GetWebuilderTab();
+    text = Replace(text, chr(9), tab);
+  }
+  var fixedtext = Replace(text, "\n", chr(13) + chr(10));
+  if (Editor.text != fixedtext) {
+    Editor.BeginEditing;
+    Editor.Text = text;    
+  }
     
-  } else if (channel == "Emmet SelStart") {
-    Sel = Editor.Selection;
-    Sel.SelStart = StrToInt(data);
-    LastReceivedSelStart = Sel.SelStart;
-    StartText = copy(LastReceivedText, 1, LastReceivedSelStart);
-    var m = RegexMatchAll(StartText, "\n", false, matches, poses);
-    if (m) {
-      Sel.SelStart = Sel.SelStart + Length(matches);
-    }
-    m = RegexMatchAll(StartText, "[\\t]", false, matches, poses);
-    if (m) {
-      tab = GetWebuilderTab();
-      Sel.SelStart = Sel.SelStart + (Length(matches) * (Length(tab) - 1));
-    }
-    Editor.Selection = Sel;
+  Sel = Editor.Selection;
+  Sel.SelStart = StrToInt(received_selstart);
+  LastReceivedSelStart = Sel.SelStart;
+  StartText = copy(LastReceivedText, 1, LastReceivedSelStart);
+  var m = RegexMatchAll(StartText, "\n", false, matches, poses);
+  if (m) {
+    Sel.SelStart = Sel.SelStart + Length(matches);
+  }
+  m = RegexMatchAll(StartText, "[\\t]", false, matches, poses);
+  if (m) {
+    tab = GetWebuilderTab();
+    Sel.SelStart = Sel.SelStart + (Length(matches) * (Length(tab) - 1));
+  }
+  Editor.Selection = Sel;
     
-  } else if (channel == "Emmet SelEnd") {
-    Sel = Editor.Selection;
-    Sel.SelLength = StrToInt(data) - LastReceivedSelStart;
-    
-    StartText = copy(LastReceivedText, LastReceivedSelStart + 1, Sel.SelLength);
-    m = RegexMatchAll(StartText, "\n", false, matches, poses);
-    if (m) {
-      Sel.SelLength = Sel.SelLength + Length(matches);
-    }
-    m = RegexMatchAll(StartText, "[\\t]", false, matches, poses);
-    if (m) {
-      tab = GetWebuilderTab();
-      Sel.SelLength = Sel.SelLength + (Length(matches) * (Length(tab) - 1));
-    }
-    
-    Editor.Selection = Sel;
-    if (Editor.IsEditing) {
-      Editor.EndEditing;
-    }
+  Sel = Editor.Selection;
+  Sel.SelLength = StrToInt(received_end) - LastReceivedSelStart;
+  
+  StartText = copy(LastReceivedText, LastReceivedSelStart + 1, Sel.SelLength);
+  m = RegexMatchAll(StartText, "\n", false, matches, poses);
+  if (m) {
+    Sel.SelLength = Sel.SelLength + Length(matches);
+  }
+  m = RegexMatchAll(StartText, "[\\t]", false, matches, poses);
+  if (m) {
+    tab = GetWebuilderTab();
+    Sel.SelLength = Sel.SelLength + (Length(matches) * (Length(tab) - 1));
+  }
+  
+  Editor.Selection = Sel;
+  if (Editor.IsEditing) {
+    Editor.EndEditing;
   }
 }
 
-function PrepareEmmetData() {
+function PrepareEmmetData(request, action) {
   var SelStart;
   var SelLen;
   Editor.GetSelectionForUnixNewlines(SelStart, SelLen);
@@ -133,12 +111,21 @@ function PrepareEmmetData() {
   } else {
     dt = "html";
   }
-  return ":" + dt + ":" + _t(SelStart) + ":" + _t(SelLen) + ":" + Editor.Text;
+  var json = new TScriptableJSON();
+  json.SetValue("request", request);
+  json.SetValue("text", Editor.Text);
+  json.SetValue("actionName", action);
+  json.SetValue("doctype", dt);
+  json.SetValue("selstart", SelStart);
+  json.SetValue("sellen", SelLen);
+  var s = json.stringify();
+  delete json;
+  return s;
 }
 
 function DoExpandAbbreviation() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "expand_abbreviation" + data);
+  var data = PrepareEmmetData("TEXT", "expand_abbreviation");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function ExpandAbbreviation(Sender) {
@@ -148,8 +135,8 @@ function ExpandAbbreviation(Sender) {
 }
 
 function DoMatchTagPairOutward() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "match_pair_outward" + data);
+  var data = PrepareEmmetData("TEXT", "match_pair_outward");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function MatchTagPairOutward(Sender) {
@@ -159,8 +146,8 @@ function MatchTagPairOutward(Sender) {
 }
 
 function DoMatchTagPairInward() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "match_pair_inward" + data);
+  var data = PrepareEmmetData("TEXT", "match_pair_inward");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function MatchTagPairInward(Sender) {
@@ -170,13 +157,13 @@ function MatchTagPairInward(Sender) {
 }
 
 function DoWrapWithAbbrevationDelayed() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "wrap_with_abbreviation" + data);
+  var data = PrepareEmmetData("TEXT", "wrap_with_abbreviation");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function DoWrapWithAbbrevation() {
-  web.Send("PARAM", SendParam);
-  Script.TimeOut(1, &DoWrapWithAbbrevationDelayed);
+  var data = PrepareEmmetData("PARAM", SendParam);
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function WrapWithAbbrevation(Sender) {
@@ -190,8 +177,8 @@ function WrapWithAbbrevation(Sender) {
 }
 
 function DoNextEditPoint() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "next_edit_point" + data);
+  var data = PrepareEmmetData("TEXT", "next_edit_point");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function NextEditPoint(Sender) {
@@ -201,8 +188,8 @@ function NextEditPoint(Sender) {
 }
 
 function DoPrevEditPoint() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "prev_edit_point" + data);
+  var data = PrepareEmmetData("TEXT", "prev_edit_point");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function PrevEditPoint(Sender) {
@@ -212,8 +199,8 @@ function PrevEditPoint(Sender) {
 }
 
 function DoSelectLine() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "select_line" + data);
+  var data = PrepareEmmetData("TEXT", "select_line");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function SelectLine(Sender) {
@@ -223,8 +210,8 @@ function SelectLine(Sender) {
 }
 
 function DoMergeLines() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "merge_lines" + data);
+  var data = PrepareEmmetData("TEXT", "merge_lines");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function MergeLines(Sender) {
@@ -234,8 +221,8 @@ function MergeLines(Sender) {
 }
 
 function DoToggleComment() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "toggle_comment" + data);
+  var data = PrepareEmmetData("TEXT", "toggle_comment");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function ToggleComment(Sender) {
@@ -245,8 +232,8 @@ function ToggleComment(Sender) {
 }
 
 function DoSplitJoinTag() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "split_join_tag" + data);
+  var data = PrepareEmmetData("TEXT", "split_join_tag");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function SplitJoinTag(Sender) {
@@ -256,8 +243,8 @@ function SplitJoinTag(Sender) {
 }
 
 function DoRemoveTag() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "remove_tag" + data);
+  var data = PrepareEmmetData("TEXT", "remove_tag");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function RemoveTag(Sender) {
@@ -267,8 +254,8 @@ function RemoveTag(Sender) {
 }
 
 function DoEvalMath() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "evaluate_math_expression" + data);
+  var data = PrepareEmmetData("TEXT", "evaluate_math_expression");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function EvalMath(Sender) {
@@ -278,8 +265,8 @@ function EvalMath(Sender) {
 }
 
 function DoIncrement() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", IncCmd + data);
+  var data = PrepareEmmetData("TEXT", IncCmd);
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function IncrementBy1(Sender) {
@@ -325,8 +312,8 @@ function DecrementBy01(Sender) {
 }
 
 function DoSelectNextItem() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "select_next_item" + data);
+  var data = PrepareEmmetData("TEXT", "select_next_item");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function SelectNextItem(Sender) {
@@ -336,8 +323,8 @@ function SelectNextItem(Sender) {
 }
 
 function DoSelectPrevItem() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "select_previous_item" + data);
+  var data = PrepareEmmetData("TEXT", "select_previous_item");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function SelectPrevItem(Sender) {
@@ -347,8 +334,8 @@ function SelectPrevItem(Sender) {
 }
 
 function DoReflectValue() {
-  var data = PrepareEmmetData();
-  web.Send("TEXT", "reflect_css_value" + data);
+  var data = PrepareEmmetData("TEXT", "reflect_css_value");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
 }
 
 function ReflectValue(Sender) {
@@ -358,17 +345,14 @@ function ReflectValue(Sender) {
 }
 
 function OnInstalled() {
-  if (WeBuilder.BuildNumber < 153) {
+  if (WeBuilder.BuildNumber < 189) {
     return "A newer editor version is required for this plugin to work.";
   }
 }
 
 function OnExit() {
-  if (web != null) {
-    delete web;
-  }
-  if (win != null) {
-    delete win;
+  if (scriptexec != null) {
+    delete scriptexec;
   }
 }
 
