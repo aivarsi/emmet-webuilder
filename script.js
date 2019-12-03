@@ -5,6 +5,8 @@ var LastReceivedText;
 var LastReceivedSelStart;
 var IncCmd = "";
 var SendParam = "";
+var autoactn;
+var autoexpand = false;
 
 
 function OnWebkitLoadEnd(Sender, Browser, Frame, Status, Res) {
@@ -344,8 +346,62 @@ function ReflectValue(Sender) {
     }
 }
 
+function DoExpandAbbrevationOrTab() {
+  var data = PrepareEmmetData("TEXT", "expand_abbreviation_with_tab");
+  scriptexec.ExecuteJavaScriptRequest("", "", data, &OnWebkitData);
+}
+
+function ExpandAbbrevationOrTab(Sender) {
+  if (!CreateEmmet(&DoExpandAbbrevationOrTab) && browser_ready) {
+    DoExpandAbbrevationOrTab();
+  }    
+}
+
+function OnKeydown(&key, shift) {
+  if (autoexpand) {
+    if (key == #9) {
+      var lt = Document.CurrentCodeType;
+      if ((lt == ltHTML) || (lt == ltCSS)) {
+        var Sel = Editor.Selection
+        if ((Sel.SelStartColReal > 0) && (Sel.SelLength == 0)) {
+        
+          var line = Editor.LinesAsDisplayed[Sel.SelStartLine];
+          if (Sel.SelStartCol <= length(line)) {
+            var ch = line[Sel.SelStartCol];
+            if (RegexMatch(ch, "[\\w\\-\\$\\:@\\!%\\+]", false) == ch) {
+          
+              var nextch = " ";
+              if (Sel.SelStartCol + 1 <= length(line)) {
+                nextch = line[Sel.SelStartCol + 1];
+              }
+              
+              if (RegexMatch(nextch, "[\\w\\-\\$\\:@\\!%\\+]", false) == "") {
+            
+                key = "";
+                ExpandAbbrevationOrTab(null);
+              }              
+            }
+          }      
+        }
+      }
+    }
+  }
+}
+
+function ToggleAutoExpandAbbreviation(Sender) {
+  var checked = !Actions.IsChecked(autoactn);  
+  Actions.SetChecked(autoactn, checked);
+  if (checked) {
+    Script.WriteSetting("Auto Expand", "1");
+    autoexpand = true;
+  } else {
+    Script.WriteSetting("Auto Expand", "0");
+    autoexpand = false;
+  }
+}
+
 function OnInstalled() {
-  if (WeBuilder.BuildNumber < 189) {
+  if (WeBuilder.BuildNumber < 224) {
     return "A newer editor version is required for this plugin to work.";
   }
 }
@@ -357,6 +413,7 @@ function OnExit() {
 }
 
 Script.RegisterAction("Emmet", "Expand Abbreviation", "Shift+Ctrl+E", &ExpandAbbreviation);
+autoactn = Script.RegisterAction("Emmet", "Auto Expand With Tab", "", &ToggleAutoExpandAbbreviation);
 Script.RegisterAction("Emmet", "Match Tag Pair (Outward)", "Ctrl+Alt+D", &MatchTagPairOutward);
 Script.RegisterAction("Emmet", "Match Tag Pair (Inward)", "Shift+Ctrl+D", &MatchTagPairInward);
 Script.RegisterAction("Emmet", "Wrap With Abbrevation", "Ctrl+Alt+A", &WrapWithAbbrevation);
@@ -368,15 +425,21 @@ Script.RegisterAction("Emmet", "Toggle Comment", "Ctrl+Alt+X", &ToggleComment);
 Script.RegisterAction("Emmet", "Split/Join Tag", "Shift+Ctrl+J", &SplitJoinTag);
 Script.RegisterAction("Emmet", "Remove Tag", "Shift+Ctrl+K", &RemoveTag);
 Script.RegisterAction("Emmet", "Evaluate Math Expression", "Shift+Ctrl+Y", &EvalMath);
-Script.RegisterAction("Emmet", "Increment Number by 1", "Ctrl+Up", &IncrementBy1);
-Script.RegisterAction("Emmet", "Decrement Number by 1", "Ctrl+Down", &DecrementBy1);
-Script.RegisterAction("Emmet", "Increment Number by 0.1", "Alt+Up", &IncrementBy01);
-Script.RegisterAction("Emmet", "Decrement Number by 0.1", "Alt+Down", &DecrementBy01);
-Script.RegisterAction("Emmet", "Increment Number by 10", "Ctrl+Alt+Up", &IncrementBy10);
-Script.RegisterAction("Emmet", "Decrement Number by 10", "Ctrl+Alt+Down", &DecrementBy10);
+Script.RegisterAction("Emmet", "Increment Number by 1", "", &IncrementBy1);
+Script.RegisterAction("Emmet", "Decrement Number by 1", "", &DecrementBy1);
+Script.RegisterAction("Emmet", "Increment Number by 0.1", "", &IncrementBy01);
+Script.RegisterAction("Emmet", "Decrement Number by 0.1", "", &DecrementBy01);
+Script.RegisterAction("Emmet", "Increment Number by 10", "", &IncrementBy10);
+Script.RegisterAction("Emmet", "Decrement Number by 10", "", &DecrementBy10);
 Script.RegisterAction("Emmet", "Select Next Item", "Ctrl+.", &SelectNextItem);
 Script.RegisterAction("Emmet", "Select Previous Item", "Ctrl+,", &SelectPrevItem);
 Script.RegisterAction("Emmet", "Reflect CSS Value", "Shift+Ctrl+B", &ReflectValue);
 
 Script.ConnectSignal("exit", &OnExit);
 Script.ConnectSignal("installed", &OnInstalled);
+Script.ConnectSignal("keydown", &OnKeydown);
+
+if (Script.ReadSetting("Auto Expand", "0") == "1") {
+  autoexpand = true;
+  Actions.SetChecked(autoactn, true);
+}

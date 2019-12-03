@@ -1,14 +1,15 @@
-Emmet plugin for Webuilder/RapidPHP 2015
+Emmet plugin for Webuilder/Rapid PHP
 ========================================
 
 This is Emmet (Zen-Coding) plugin for following editors:
 
 Webuilder: http://www.webuilderapp.com/ <br>
-RapidPHP: http://www.rapidphpeditor.com/
+Rapid PHP: http://www.rapidphpeditor.com/
 
 Supports following commands:
 
   - Expand Abbreviation
+  - Auto Expand Abbrevation When Tab Key Pressed
   - Match Tag Pair (Outward)
   - Match Tag Pair (Inward)
   - Wrap With Abbrevation
